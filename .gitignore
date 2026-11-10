@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.coverage
+.env
+.env.*
+!.env.example
+# Los archivos exportados por gdrive contienen tokens OAuth.
+*.gdrive-export.zip
+account*.zip
+credentials*.json
+client_secret*.json
+Downloads/
