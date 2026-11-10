@@ -20,4 +20,5 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python3 -m py_compile scripts/gdrive_skill.py scripts/install_skill.py
+      - run: bash -n scripts/termux_setup.sh
       - run: python3 -m unittest discover -s tests -v

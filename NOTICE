@@ -5,7 +5,8 @@ https://github.com/glotlabs/gdrive
 Copyright (c) 2023 glotlabs
 Licensed under the MIT License.
 
-No upstream source code or binary is vendored in this repository. The setup
-command downloads official release archives from glotlabs/gdrive at runtime.
+No upstream source code or binary is vendored in this repository. On x86_64,
+setup downloads official release archives. On Android ARM64/Termux, it clones
+the pinned upstream tag and compiles gdrive for aarch64 inside Debian/proot.
 Google Drive is a trademark of Google LLC. This project is not affiliated with
 or endorsed by Google LLC or glotlabs.
