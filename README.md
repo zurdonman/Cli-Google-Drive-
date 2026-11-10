@@ -20,7 +20,7 @@ El archivo `AGENTS.md` guía el descubrimiento; `skills/google-drive/SKILL.md` c
 
 ## Inicio rápido
 
-Requisitos: Python 3.9+ y Linux, macOS o Windows x86_64. El adaptador usa únicamente la biblioteca estándar de Python.
+Requisitos: Python 3.10+ y Linux, macOS o Windows x86_64. El adaptador usa únicamente la biblioteca estándar de Python.
 
 ```bash
 git clone https://github.com/zurdonman/Cli-Google-Drive-.git
