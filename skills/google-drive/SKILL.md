@@ -19,7 +19,7 @@ Si esta skill se instaló de forma aislada con `install_skill.py`, el mismo adap
 
 ## Flujo obligatorio
 
-1. Ejecuta `doctor` y revisa `platform`. Si `installed` es `false`, ejecuta `setup`: instala el binario oficial en x86_64; en Android/Termux ARM64 compila `gdrive` aarch64 en Debian/proot. La compilación en Android puede tardar varios minutos y debe ejecutarse desde Termux, no desde dentro de proot.
+1. Ejecuta `doctor` y revisa `platform`. Si `installed` es `false`, ejecuta `setup`: instala el binario oficial en x86_64; en Android/Termux ARM64 instala directamente el binario Android/Bionic aarch64 precompilado, con verificación SHA-256. No necesita proot, Rust ni compilación en el teléfono.
 2. Si `authenticated` es `false`, explica al usuario que debe completar OAuth en su terminal con `account add`. No solicites Client ID, Client Secret, códigos OAuth ni tokens por el chat. En un servidor remoto, el usuario puede importar localmente un archivo de cuenta con `account import`.
 3. Usa `list` para descubrir IDs. No inventes IDs de Drive.
 4. Ejecuta la operación pedida y comprueba `ok`. Devuelve al usuario los IDs y rutas relevantes.
