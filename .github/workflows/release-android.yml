@@ -62,7 +62,10 @@ jobs:
           cat dist/gdrive_android-arm64.tar.gz.sha256
       - name: Expose compiler diagnostics
         if: failure()
-        run: tail -n 160 build.log | tee -a "$GITHUB_STEP_SUMMARY"
+        run: |
+          tail -n 80 build.log | while IFS= read -r line; do
+            printf '::error::%s\n' "${line//'%'/'%25'}"
+          done
       - name: Upload build artifact
         if: success()
         uses: actions/upload-artifact@v4
