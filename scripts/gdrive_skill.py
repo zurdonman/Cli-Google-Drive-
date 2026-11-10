@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -21,7 +23,8 @@ from typing import Optional, Union
 
 UPSTREAM_REPOSITORY = "https://github.com/glotlabs/gdrive"
 DEFAULT_RELEASE = "3.9.1"
-USER_AGENT = "GoogleDrive-Agent-Skill/1.1"
+USER_AGENT = "GoogleDrive-Agent-Skill/1.2"
+ANDROID_RELEASE_REPOSITORY = "https://github.com/zurdonman/Cli-Google-Drive-"
 
 
 class SkillError(Exception):
@@ -67,7 +70,7 @@ def find_binary(required: bool = True) -> Optional[str]:
             return str(Path(candidate).resolve())
     if required:
         hint = (
-            "Ejecuta 'python3 scripts/gdrive_skill.py setup' para compilar gdrive ARM64 en proot."
+            "Ejecuta 'python3 scripts/gdrive_skill.py setup' para instalar el binario ARM64 precompilado."
             if is_termux() and platform.machine().lower() == "aarch64"
             else "Ejecuta 'python3 scripts/gdrive_skill.py setup'."
         )
@@ -159,33 +162,48 @@ def extract_binary(archive: Path, destination: Path, windows: bool) -> Path:
     return matches[0]
 
 
-def setup_termux(args: argparse.Namespace, version: str) -> dict:
-    """Compile an aarch64 binary in proot; upstream publishes x86_64 only."""
-    installer = Path(__file__).resolve().with_name("termux_setup.sh")
-    if not installer.is_file():
-        raise SkillError("Falta el instalador scripts/termux_setup.sh.", "installer_not_found", 3)
-    environment = os.environ.copy()
-    environment["GDRIVE_RELEASE"] = version
-    if args.install_dir:
-        environment["GDRIVE_INSTALL_DIR"] = str(Path(args.install_dir).expanduser().resolve())
-    try:
-        completed = subprocess.run(["bash", str(installer)], env=environment, check=False)
-    except OSError as exc:
-        raise SkillError(f"No se pudo iniciar el instalador de Termux: {exc}", "execution_failed", 3) from exc
-    if completed.returncode:
-        raise SkillError(
-            "La compilación ARM64 no se completó. Revisa la salida anterior y el espacio disponible.",
-            "android_build_failed",
-            3,
-        )
-    binary = str(Path(args.install_dir).expanduser().resolve() / "gdrive") if args.install_dir else find_binary()
-    version_output, _ = checked_with_binary(binary, ["version"])
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def setup_android(args: argparse.Namespace, version: str) -> dict:
+    """Install the NDK-built aarch64 Android binary; no phone-side toolchain."""
+    asset = "gdrive_android-arm64.tar.gz"
+    base_url = f"{ANDROID_RELEASE_REPOSITORY}/releases/download/android-arm64-v{version}"
+    url = f"{base_url}/{asset}"
+    install_dir = Path(args.install_dir).expanduser() if args.install_dir else default_install_dir()
+    install_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="gdrive-android-") as temporary:
+        temporary_path = Path(temporary)
+        archive = temporary_path / asset
+        checksum = temporary_path / f"{asset}.sha256"
+        download_file(url, archive)
+        download_file(f"{url}.sha256", checksum)
+        expected = checksum.read_text(encoding="utf-8").split()[0].lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise SkillError("El checksum del paquete Android no es válido.", "invalid_checksum", 3)
+        actual = sha256_file(archive)
+        if not hmac.compare_digest(actual, expected):
+            raise SkillError("El paquete Android no supera la verificación SHA-256.", "checksum_mismatch", 3)
+        binary = extract_binary(archive, temporary_path, False)
+        target = install_dir / "gdrive"
+        staged = install_dir / ".gdrive.tmp"
+        shutil.copyfile(binary, staged)
+        staged.chmod(0o700)
+        staged.replace(target)
+    version_output, _ = checked_with_binary(str(target), ["version"])
     return result("setup", {
-        "binary": binary,
+        "binary": str(target),
         "version": version_output,
-        "source": f"{UPSTREAM_REPOSITORY}/tree/{version}",
+        "source": url,
         "platform": "android-arm64",
-        "runtime": f"Termux + {os.environ.get('GDRIVE_PROOT_DISTRO', 'debian')} proot",
+        "runtime": "Termux / Android Bionic (sin proot)",
+        "precompiled": True,
+        "sha256": actual,
     })
 
 
@@ -196,7 +214,7 @@ def setup(args: argparse.Namespace) -> dict:
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise SkillError("La versión debe tener el formato X.Y.Z.", "invalid_version", 2)
     if is_termux() and machine == "aarch64":
-        return setup_termux(args, version)
+        return setup_android(args, version)
     if machine not in ("x86_64", "amd64"):
         detail = " En Android ARM64 ejecuta este comando desde Termux." if platform_details()["android"] else ""
         raise SkillError(
@@ -261,10 +279,10 @@ def build_parser() -> argparse.ArgumentParser:
         prog="gdrive-skill",
         description="Skill de Google Drive para agentes, basada en glotlabs/gdrive.",
     )
-    parser.add_argument("--version", action="version", version="gdrive-skill 1.1.0")
+    parser.add_argument("--version", action="version", version="gdrive-skill 1.2.0")
     commands = parser.add_subparsers(dest="command", required=True)
 
-    setup_parser = commands.add_parser("setup", help="Instala gdrive x86_64 o lo compila para Android ARM64")
+    setup_parser = commands.add_parser("setup", help="Instala gdrive x86_64 o el binario Android ARM64 precompilado")
     setup_parser.add_argument("--release", dest="version", default=DEFAULT_RELEASE)
     setup_parser.add_argument("--install-dir")
     commands.add_parser("doctor", help="Comprueba instalación y autenticación")

@@ -43,9 +43,9 @@ También puedes usar un binario ya instalado en `PATH` o definir `GDRIVE_BIN=/ru
 
 ## Android ARM64 (aarch64) con Termux
 
-Android está soportado mediante **Termux + Debian en `proot-distro`**. El instalador compila el código de `glotlabs/gdrive` para ARM64 porque upstream solo publica binarios x86_64. No emula x86 ni requiere root.
+Android está soportado con un **binario Android/Bionic ARM64 precompilado**. Funciona directamente en Termux: no necesita Debian, proot, Rust, compilación en el teléfono, emulación x86 ni root. Requiere Android 7.0+ (API 24) en un dispositivo `aarch64`.
 
-Desde **Termux** (no desde dentro de proot):
+Desde **Termux**:
 
 ```bash
 pkg update
@@ -54,20 +54,20 @@ git clone https://github.com/zurdonman/Cli-Google-Drive-.git
 cd Cli-Google-Drive-
 termux-setup-storage   # opcional: permite usar /sdcard/Download, etc.
 
-# Detecta Android aarch64, instala Debian/proot y compila gdrive 3.9.1
+# Descarga, verifica SHA-256 e instala gdrive 3.9.1 ARM64 precompilado
 python3 scripts/gdrive_skill.py setup
 python3 scripts/gdrive_skill.py doctor
 python3 scripts/gdrive_skill.py account add
 ```
 
-La primera compilación puede tardar varios minutos y necesita varios GB de espacio libre. Puedes limitar la memoria/paralelismo con `GDRIVE_BUILD_JOBS=1` (valor predeterminado: `2`). El comando `setup` crea un lanzador transparente: todas las operaciones posteriores se ejecutan desde Termux con los mismos comandos que en escritorio.
+El paquete se genera con Android NDK en GitHub Actions y se publica en [Android ARM64 releases](https://github.com/zurdonman/Cli-Google-Drive-/releases/tag/android-arm64-v3.9.1). `setup` descarga el archivo y su checksum, verifica SHA-256 y lo instala en el directorio de datos del usuario. No hay toolchain ni pasos adicionales en el teléfono.
 
 ```bash
 python3 scripts/gdrive_skill.py upload /sdcard/Download/informe.pdf
 python3 scripts/gdrive_skill.py download FILE_ID --destination /sdcard/Download
 ```
 
-Durante OAuth, abre la URL en el navegador del teléfono. El retorno a `http://localhost:8085` se completa en el mismo dispositivo; no uses ese enlace desde otro equipo. Los tokens se guardan dentro del home de la distribución proot, no en Git.
+Durante OAuth, abre la URL en el navegador del teléfono. El retorno a `http://localhost:8085` se completa en el mismo dispositivo; no uses ese enlace desde otro equipo. Los tokens se guardan en el home privado de Termux (`~/.config/gdrive3/`), no en Git.
 
 Consulta [docs/ANDROID.md](docs/ANDROID.md) para reinstalación, rutas, solución de problemas y uso directo de `termux_setup.sh`.
 
@@ -194,7 +194,7 @@ El instalador no sobrescribe una skill existente. Tras instalarla, reinicia o re
 - Los errores también se devuelven como JSON con `error.code` y `error.message`.
 - `delete` exige `--yes`; compartir públicamente o borrar recursivamente requiere además confirmación humana por parte del agente.
 - No registres tokens, archives de cuentas ni credenciales en logs, prompts o Git. `.gitignore` excluye los patrones más habituales.
-- El instalador usa únicamente releases/tags HTTPS del repositorio upstream, valida las rutas de los archivos comprimidos y compila desde código fuente en Android ARM64.
+- El instalador usa releases HTTPS, valida las rutas de los archivos comprimidos y exige SHA-256 en el paquete precompilado de Android ARM64.
 
 ## Desarrollo y pruebas
 

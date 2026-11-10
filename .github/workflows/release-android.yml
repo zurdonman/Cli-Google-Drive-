@@ -1,0 +1,80 @@
+name: Build precompiled Android ARM64 release
+
+on:
+  workflow_dispatch:
+    inputs:
+      gdrive_version:
+        description: "Upstream gdrive release/tag"
+        required: true
+        default: "3.9.1"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  android-arm64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GDRIVE_VERSION: ${{ inputs.gdrive_version }}
+      ANDROID_API: "24"
+    steps:
+      - name: Check release version
+        run: echo "$GDRIVE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+      - name: Check out gdrive source
+        uses: actions/checkout@v4
+        with:
+          repository: glotlabs/gdrive
+          ref: ${{ inputs.gdrive_version }}
+          path: upstream
+      - name: Install Rust aarch64 Android target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@v3
+        id: ndk
+        with:
+          ndk-version: r27c
+          add-to-path: true
+      - name: Build native Android/Bionic ARM64 binary
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
+          CARGO_TARGET_AARCH64_LINUX_ANDROID_AR: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+        run: |
+          cargo build --manifest-path upstream/Cargo.toml --locked --release --target aarch64-linux-android
+          BINARY=upstream/target/aarch64-linux-android/release/gdrive
+          "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" "$BINARY"
+          file "$BINARY"
+          readelf -h "$BINARY" | grep -E 'Class:|Machine:'
+          readelf -l "$BINARY" | grep -E 'interpreter: /system/bin/linker64'
+          mkdir -p dist
+          cp "$BINARY" dist/gdrive
+          chmod 755 dist/gdrive
+          tar -czf dist/gdrive_android-arm64.tar.gz -C dist gdrive
+          sha256sum dist/gdrive_android-arm64.tar.gz > dist/gdrive_android-arm64.tar.gz.sha256
+          cat dist/gdrive_android-arm64.tar.gz.sha256
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdrive-android-arm64-${{ inputs.gdrive_version }}
+          path: |
+            dist/gdrive_android-arm64.tar.gz
+            dist/gdrive_android-arm64.tar.gz.sha256
+          if-no-files-found: error
+      - name: Publish plug-and-play release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-arm64-v${{ inputs.gdrive_version }}
+          name: gdrive ${{ inputs.gdrive_version }} - Android ARM64
+          body: |
+            Binario precompilado `aarch64-linux-android` de glotlabs/gdrive ${{ inputs.gdrive_version }}.
+            Android 7.0+ (API 24), ARM64, Termux. No requiere proot, root ni compilación en el teléfono.
+            Instalación: `python3 scripts/gdrive_skill.py setup`.
+            El instalador verifica el SHA-256 antes de instalar.
+          files: |
+            dist/gdrive_android-arm64.tar.gz
+            dist/gdrive_android-arm64.tar.gz.sha256
+          make_latest: false

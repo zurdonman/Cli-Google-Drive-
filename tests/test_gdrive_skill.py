@@ -1,4 +1,6 @@
 import argparse
+import hashlib
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -72,19 +74,36 @@ class GdriveSkillTests(unittest.TestCase):
         with self.assertRaises(skill.SkillError):
             skill.execute(args)
 
+    @staticmethod
+    def fake_android_download(url, destination):
+        payload = b"android-arm64-binary"
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w:gz") as bundle:
+            info = tarfile.TarInfo("gdrive")
+            info.size = len(payload)
+            bundle.addfile(info, io.BytesIO(payload))
+        package = buffer.getvalue()
+        if url.endswith(".sha256"):
+            destination.write_text(f"{hashlib.sha256(package).hexdigest()}  gdrive_android-arm64.tar.gz\n")
+        else:
+            destination.write_bytes(package)
+
     @patch.object(skill.platform, "machine", return_value="aarch64")
     @patch.object(skill, "is_termux", return_value=True)
     @patch.object(skill, "checked_with_binary", return_value=("gdrive 3.9.1", ""))
-    @patch.object(skill, "find_binary", return_value="/home/user/.local/share/google-drive-skill/bin/gdrive")
-    @patch.object(skill.subprocess, "run")
-    def test_android_arm64_setup_uses_termux_source_builder(self, run, _find, _version, _termux, _machine):
-        run.return_value = skill.subprocess.CompletedProcess(["bash"], 0)
-        args = argparse.Namespace(command="setup", version="3.9.1", install_dir=None)
-        response = skill.execute(args)
+    @patch.object(skill, "download_file", side_effect=fake_android_download)
+    def test_android_arm64_setup_installs_verified_precompiled_binary(self, download, _version, _termux, _machine):
+        with tempfile.TemporaryDirectory() as directory:
+            args = argparse.Namespace(command="setup", version="3.9.1", install_dir=directory)
+            response = skill.execute(args)
+            self.assertTrue((Path(directory) / "gdrive").is_file())
         self.assertEqual(response["data"]["platform"], "android-arm64")
-        self.assertEqual(response["data"]["version"], "gdrive 3.9.1")
-        self.assertTrue(run.call_args.args[0][1].endswith("termux_setup.sh"))
-        self.assertEqual(run.call_args.kwargs["env"]["GDRIVE_RELEASE"], "3.9.1")
+        self.assertTrue(response["data"]["precompiled"])
+        self.assertIn("sin proot", response["data"]["runtime"])
+        self.assertEqual(len(response["data"]["sha256"]), 64)
+        urls = [call.args[0] for call in download.call_args_list]
+        self.assertTrue(urls[0].endswith("gdrive_android-arm64.tar.gz"))
+        self.assertTrue(urls[1].endswith("gdrive_android-arm64.tar.gz.sha256"))
 
     @patch.object(skill.platform, "machine", return_value="aarch64")
     @patch.object(skill, "is_termux", return_value=False)
@@ -99,15 +118,15 @@ class GdriveSkillTests(unittest.TestCase):
     def test_termux_detection(self):
         self.assertTrue(skill.is_termux())
 
-    def test_termux_script_generates_transparent_arm64_launcher(self):
+    def test_termux_script_delegates_to_precompiled_setup(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fake_bin = root / "fake-bin"
             fake_bin.mkdir()
+            log = root / "python-args"
             commands = {
                 "uname": "#!/bin/sh\necho aarch64\n",
-                "pkg": "#!/bin/sh\nexit 0\n",
-                "proot-distro": "#!/bin/sh\nexit 0\n",
+                "python3": f"#!/bin/sh\nprintf '%s\\n' \"$@\" > '{log}'\n",
             }
             for name, content in commands.items():
                 executable = fake_bin / name
@@ -118,14 +137,29 @@ class GdriveSkillTests(unittest.TestCase):
                 "PATH": f"{fake_bin}:{environment['PATH']}",
                 "PREFIX": "/data/data/com.termux/files/usr",
                 "HOME": str(root),
-                "XDG_DATA_HOME": str(root / "data"),
             })
             installer = Path(skill.__file__).resolve().with_name("termux_setup.sh")
             completed = subprocess.run(["bash", str(installer)], env=environment, capture_output=True, text=True, check=False)
             self.assertEqual(completed.returncode, 0, completed.stderr)
-            launcher = root / "data" / "google-drive-skill" / "bin" / "gdrive"
-            self.assertTrue(launcher.is_file())
-            self.assertIn('proot-distro login "debian" -- /usr/local/bin/gdrive "$@"', launcher.read_text())
+            output = log.read_text()
+            self.assertIn("gdrive_skill.py", output)
+            self.assertIn("setup", output)
+
+    @patch.object(skill.platform, "machine", return_value="aarch64")
+    @patch.object(skill, "is_termux", return_value=True)
+    @patch.object(skill, "download_file")
+    def test_android_rejects_checksum_mismatch(self, download, _termux, _machine):
+        def bad_download(url, destination):
+            if url.endswith(".sha256"):
+                destination.write_text("0" * 64)
+            else:
+                destination.write_bytes(b"tampered")
+        download.side_effect = bad_download
+        with tempfile.TemporaryDirectory() as directory:
+            args = argparse.Namespace(command="setup", version="3.9.1", install_dir=directory)
+            with self.assertRaises(skill.SkillError) as error:
+                skill.execute(args)
+        self.assertEqual(error.exception.code, "checksum_mismatch")
 
 
 if __name__ == "__main__":

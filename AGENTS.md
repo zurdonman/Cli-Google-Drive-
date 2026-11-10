@@ -4,7 +4,7 @@ Este repositorio es una integración de Google Drive basada en `glotlabs/gdrive`
 
 1. Para cualquier petición sobre Drive o `/GoogleDrive`, lee y sigue `skills/google-drive/SKILL.md`.
 2. El adaptador es `python3 scripts/gdrive_skill.py`; no uses una API distinta ni instales librerías innecesarias.
-3. Empieza con `doctor` y revisa `platform`. Usa `setup` solo si falta el binario. En Android ARM64, ejecuta `setup` desde Termux: compilará gdrive aarch64 en Debian/proot; no intentes usar el release x86_64.
+3. Empieza con `doctor` y revisa `platform`. Usa `setup` solo si falta el binario. En Android ARM64, ejecútalo desde Termux: instalará directamente el binario Android/Bionic aarch64 precompilado y verificará SHA-256; no uses proot ni el release x86_64.
 4. Si falta autenticación, pide al usuario que ejecute `account add` en su terminal. Nunca solicites credenciales, tokens o códigos OAuth en el chat.
 5. Obtén IDs reales con `list`; no inventes IDs ni afirmes que una operación se completó sin un resultado JSON con `ok: true`.
 6. No borres, sobrescribas ni compartas públicamente sin confirmación explícita. `delete` siempre necesita `--yes`.
