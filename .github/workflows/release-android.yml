@@ -46,6 +46,8 @@ jobs:
           ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
           CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
           CARGO_TARGET_AARCH64_LINUX_ANDROID_AR: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+          CC_aarch64_linux_android: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
+          AR_aarch64_linux_android: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
           CARGO_TERM_COLOR: never
         run: |
           set -o pipefail
@@ -69,6 +71,7 @@ jobs:
           while IFS= read -r line; do
             printf '::error::%s\n' "${line//'%'/'%25'}"
           done < diagnostics.log
+          printf '::error::DIAGNOSTICS_BASE64:%s\n' "$(tail -n 160 clean-build.log | base64 -w0)"
       - name: Upload build artifact
         if: success()
         uses: actions/upload-artifact@v4
