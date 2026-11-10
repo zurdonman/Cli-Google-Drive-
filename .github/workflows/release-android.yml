@@ -47,7 +47,8 @@ jobs:
           CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
           CARGO_TARGET_AARCH64_LINUX_ANDROID_AR: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
         run: |
-          cargo build --manifest-path upstream/Cargo.toml --locked --release --target aarch64-linux-android
+          set -o pipefail
+          cargo build --manifest-path upstream/Cargo.toml --locked --release --target aarch64-linux-android 2>&1 | tee build.log
           BINARY=upstream/target/aarch64-linux-android/release/gdrive
           "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" "$BINARY"
           file "$BINARY"
@@ -59,7 +60,11 @@ jobs:
           tar -czf dist/gdrive_android-arm64.tar.gz -C dist gdrive
           sha256sum dist/gdrive_android-arm64.tar.gz > dist/gdrive_android-arm64.tar.gz.sha256
           cat dist/gdrive_android-arm64.tar.gz.sha256
+      - name: Expose compiler diagnostics
+        if: failure()
+        run: tail -n 160 build.log | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload build artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: gdrive-android-arm64-${{ env.GDRIVE_VERSION }}
