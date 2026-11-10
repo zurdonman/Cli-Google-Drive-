@@ -46,6 +46,7 @@ jobs:
           ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
           CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
           CARGO_TARGET_AARCH64_LINUX_ANDROID_AR: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+          CARGO_TERM_COLOR: never
         run: |
           set -o pipefail
           cargo build --manifest-path upstream/Cargo.toml --locked --release --target aarch64-linux-android 2>&1 | tee build.log
@@ -63,9 +64,11 @@ jobs:
       - name: Expose compiler diagnostics
         if: failure()
         run: |
-          tail -n 80 build.log | while IFS= read -r line; do
+          tr '\r' '\n' < build.log > clean-build.log
+          grep -E -A 16 -B 8 'error(\[|:)|failed|No such file|not found' clean-build.log | tail -n 120 > diagnostics.log || tail -n 120 clean-build.log > diagnostics.log
+          while IFS= read -r line; do
             printf '::error::%s\n' "${line//'%'/'%25'}"
-          done
+          done < diagnostics.log
       - name: Upload build artifact
         if: success()
         uses: actions/upload-artifact@v4
