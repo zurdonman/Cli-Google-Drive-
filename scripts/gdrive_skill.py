@@ -21,7 +21,7 @@ from typing import Optional, Union
 
 UPSTREAM_REPOSITORY = "https://github.com/glotlabs/gdrive"
 DEFAULT_RELEASE = "3.9.1"
-USER_AGENT = "GoogleDrive-Agent-Skill/1.0"
+USER_AGENT = "GoogleDrive-Agent-Skill/1.1"
 
 
 class SkillError(Exception):
@@ -33,6 +33,19 @@ class SkillError(Exception):
 
 def emit(payload: dict) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def is_termux() -> bool:
+    return "com.termux/files/usr" in os.environ.get("PREFIX", "")
+
+
+def platform_details() -> dict:
+    return {
+        "system": platform.system().lower(),
+        "architecture": platform.machine().lower(),
+        "android": bool(os.environ.get("ANDROID_ROOT")) or Path("/system/build.prop").exists(),
+        "termux": is_termux(),
+    }
 
 
 def default_install_dir() -> Path:
@@ -53,9 +66,13 @@ def find_binary(required: bool = True) -> Optional[str]:
         if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
             return str(Path(candidate).resolve())
     if required:
+        hint = (
+            "Ejecuta 'python3 scripts/gdrive_skill.py setup' para compilar gdrive ARM64 en proot."
+            if is_termux() and platform.machine().lower() == "aarch64"
+            else "Ejecuta 'python3 scripts/gdrive_skill.py setup'."
+        )
         raise SkillError(
-            "No se encontró gdrive. Ejecuta 'python3 scripts/gdrive_skill.py setup' "
-            "o define GDRIVE_BIN.",
+            f"No se encontró gdrive. {hint} También puedes definir GDRIVE_BIN.",
             "binary_not_found",
             3,
         )
@@ -142,12 +159,48 @@ def extract_binary(archive: Path, destination: Path, windows: bool) -> Path:
     return matches[0]
 
 
+def setup_termux(args: argparse.Namespace, version: str) -> dict:
+    """Compile an aarch64 binary in proot; upstream publishes x86_64 only."""
+    installer = Path(__file__).resolve().with_name("termux_setup.sh")
+    if not installer.is_file():
+        raise SkillError("Falta el instalador scripts/termux_setup.sh.", "installer_not_found", 3)
+    environment = os.environ.copy()
+    environment["GDRIVE_RELEASE"] = version
+    if args.install_dir:
+        environment["GDRIVE_INSTALL_DIR"] = str(Path(args.install_dir).expanduser().resolve())
+    try:
+        completed = subprocess.run(["bash", str(installer)], env=environment, check=False)
+    except OSError as exc:
+        raise SkillError(f"No se pudo iniciar el instalador de Termux: {exc}", "execution_failed", 3) from exc
+    if completed.returncode:
+        raise SkillError(
+            "La compilación ARM64 no se completó. Revisa la salida anterior y el espacio disponible.",
+            "android_build_failed",
+            3,
+        )
+    binary = str(Path(args.install_dir).expanduser().resolve() / "gdrive") if args.install_dir else find_binary()
+    version_output, _ = checked_with_binary(binary, ["version"])
+    return result("setup", {
+        "binary": binary,
+        "version": version_output,
+        "source": f"{UPSTREAM_REPOSITORY}/tree/{version}",
+        "platform": "android-arm64",
+        "runtime": f"Termux + {os.environ.get('GDRIVE_PROOT_DISTRO', 'debian')} proot",
+    })
+
+
 def setup(args: argparse.Namespace) -> dict:
     system = platform.system().lower()
     machine = platform.machine().lower()
+    version = args.version.lstrip("v")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise SkillError("La versión debe tener el formato X.Y.Z.", "invalid_version", 2)
+    if is_termux() and machine == "aarch64":
+        return setup_termux(args, version)
     if machine not in ("x86_64", "amd64"):
+        detail = " En Android ARM64 ejecuta este comando desde Termux." if platform_details()["android"] else ""
         raise SkillError(
-            f"Arquitectura {machine} no soportada por los binarios oficiales (solo x86_64).",
+            f"Arquitectura {machine} sin binario oficial (los releases son x86_64).{detail}",
             "unsupported_platform",
             3,
         )
@@ -159,9 +212,6 @@ def setup(args: argparse.Namespace) -> dict:
         asset = "gdrive_windows-x64.zip"
     else:
         raise SkillError(f"Sistema no soportado: {system}", "unsupported_platform", 3)
-    version = args.version.lstrip("v")
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
-        raise SkillError("La versión debe tener el formato X.Y.Z.", "invalid_version", 2)
     url = f"{UPSTREAM_REPOSITORY}/releases/download/{version}/{asset}"
     install_dir = Path(args.install_dir).expanduser() if args.install_dir else default_install_dir()
     install_dir.mkdir(parents=True, exist_ok=True)
@@ -211,10 +261,10 @@ def build_parser() -> argparse.ArgumentParser:
         prog="gdrive-skill",
         description="Skill de Google Drive para agentes, basada en glotlabs/gdrive.",
     )
-    parser.add_argument("--version", action="version", version="gdrive-skill 1.0.0")
+    parser.add_argument("--version", action="version", version="gdrive-skill 1.1.0")
     commands = parser.add_subparsers(dest="command", required=True)
 
-    setup_parser = commands.add_parser("setup", help="Instala el binario oficial de gdrive")
+    setup_parser = commands.add_parser("setup", help="Instala gdrive x86_64 o lo compila para Android ARM64")
     setup_parser.add_argument("--release", dest="version", default=DEFAULT_RELEASE)
     setup_parser.add_argument("--install-dir")
     commands.add_parser("doctor", help="Comprueba instalación y autenticación")
@@ -308,7 +358,9 @@ def execute(args: argparse.Namespace) -> dict:
         return setup(args)
     if command == "doctor":
         binary = find_binary(required=False)
-        data = {"binary": binary, "installed": binary is not None, "authenticated": False, "account": None}
+        data = {"binary": binary, "installed": binary is not None, "authenticated": False, "account": None, "platform": platform_details()}
+        if is_termux() and platform.machine().lower() == "aarch64" and not binary:
+            data["install_command"] = "python3 scripts/gdrive_skill.py setup"
         if binary:
             data["version"] = checked_with_binary(binary, ["version"])[0]
             current = run_gdrive(["account", "current"])

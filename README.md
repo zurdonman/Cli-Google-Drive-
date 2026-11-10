@@ -20,7 +20,7 @@ El archivo `AGENTS.md` guía el descubrimiento; `skills/google-drive/SKILL.md` c
 
 ## Inicio rápido
 
-Requisitos: Python 3.10+ y Linux, macOS o Windows x86_64. El adaptador usa únicamente la biblioteca estándar de Python.
+Requisitos: Python 3.10+ y Linux, macOS o Windows x86_64, o **Android ARM64 con Termux**. El adaptador usa únicamente la biblioteca estándar de Python.
 
 ```bash
 git clone https://github.com/zurdonman/Cli-Google-Drive-.git
@@ -40,6 +40,36 @@ python3 scripts/gdrive_skill.py list --max 10
 ```
 
 También puedes usar un binario ya instalado en `PATH` o definir `GDRIVE_BIN=/ruta/a/gdrive`. Para instalar otra versión: `setup --release X.Y.Z`.
+
+## Android ARM64 (aarch64) con Termux
+
+Android está soportado mediante **Termux + Debian en `proot-distro`**. El instalador compila el código de `glotlabs/gdrive` para ARM64 porque upstream solo publica binarios x86_64. No emula x86 ni requiere root.
+
+Desde **Termux** (no desde dentro de proot):
+
+```bash
+pkg update
+pkg install -y git python
+git clone https://github.com/zurdonman/Cli-Google-Drive-.git
+cd Cli-Google-Drive-
+termux-setup-storage   # opcional: permite usar /sdcard/Download, etc.
+
+# Detecta Android aarch64, instala Debian/proot y compila gdrive 3.9.1
+python3 scripts/gdrive_skill.py setup
+python3 scripts/gdrive_skill.py doctor
+python3 scripts/gdrive_skill.py account add
+```
+
+La primera compilación puede tardar varios minutos y necesita varios GB de espacio libre. Puedes limitar la memoria/paralelismo con `GDRIVE_BUILD_JOBS=1` (valor predeterminado: `2`). El comando `setup` crea un lanzador transparente: todas las operaciones posteriores se ejecutan desde Termux con los mismos comandos que en escritorio.
+
+```bash
+python3 scripts/gdrive_skill.py upload /sdcard/Download/informe.pdf
+python3 scripts/gdrive_skill.py download FILE_ID --destination /sdcard/Download
+```
+
+Durante OAuth, abre la URL en el navegador del teléfono. El retorno a `http://localhost:8085` se completa en el mismo dispositivo; no uses ese enlace desde otro equipo. Los tokens se guardan dentro del home de la distribución proot, no en Git.
+
+Consulta [docs/ANDROID.md](docs/ANDROID.md) para reinstalación, rutas, solución de problemas y uso directo de `termux_setup.sh`.
 
 ### Autenticación Google OAuth
 
@@ -164,13 +194,14 @@ El instalador no sobrescribe una skill existente. Tras instalarla, reinicia o re
 - Los errores también se devuelven como JSON con `error.code` y `error.message`.
 - `delete` exige `--yes`; compartir públicamente o borrar recursivamente requiere además confirmación humana por parte del agente.
 - No registres tokens, archives de cuentas ni credenciales en logs, prompts o Git. `.gitignore` excluye los patrones más habituales.
-- El instalador descarga únicamente releases HTTPS del repositorio upstream y valida las rutas del archivo comprimido.
+- El instalador usa únicamente releases/tags HTTPS del repositorio upstream, valida las rutas de los archivos comprimidos y compila desde código fuente en Android ARM64.
 
 ## Desarrollo y pruebas
 
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m py_compile scripts/gdrive_skill.py scripts/install_skill.py
+bash -n scripts/termux_setup.sh
 ```
 
 ## Licencia y atribución
