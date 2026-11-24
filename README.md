@@ -196,12 +196,32 @@ El instalador no sobrescribe una skill existente. Tras instalarla, reinicia o re
 - No registres tokens, archives de cuentas ni credenciales en logs, prompts o Git. `.gitignore` excluye los patrones más habituales.
 - El instalador usa releases HTTPS, valida las rutas de los archivos comprimidos y exige SHA-256 en el paquete precompilado de Android ARM64.
 
+## Cortos hechos con lemo-opuscar (`films/`)
+
+El repositorio también guarda los cortos que se producen aquí con
+[lemo-opuscar](https://github.com/lemomo-ai/lemo-opuscar), la librería de estilos de cine hecha con
+código. No es una dependencia de la skill de Drive: son proyectos independientes, cada uno en su carpeta,
+con su `index.html` (contrato `render(t)`), su tratamiento, sus datos y el `.mp4` montado.
+
+| Corto | Estilo | Duración | Ficheros |
+|---|---|---|---|
+| **DIEZ** — la eficiencia de la IA y su factura | Bauhaus Shapes | 42 s · 1920×1080 · 30 fps | [`films/kb-per-watt/`](films/kb-per-watt/) · [`diez.mp4`](films/kb-per-watt/diez.mp4) · [`diez.es.srt`](films/kb-per-watt/diez.es.srt) |
+
+Cómo se montó cada uno, qué sustitutos hicieron falta en un entorno sin Chromium, sin ffmpeg y sin los
+GitHub Release assets de Lemo (navegador de `@sparticuz/chromium`, ffmpeg del wheel de PyPI
+`imageio-ffmpeg`, música sintetizada en vez de muestreada, sin voz), y cómo repetir el render paso a paso:
+[`films/kb-per-watt/README.md`](films/kb-per-watt/README.md) y
+[`build/setup-film-env.sh`](build/setup-film-env.sh).
+
 ## Desarrollo y pruebas
 
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m py_compile scripts/gdrive_skill.py scripts/install_skill.py
 bash -n scripts/termux_setup.sh
+
+# entorno opcional para renderizar los cortos de films/ (necesita node 20+)
+sh -n build/setup-film-env.sh
 ```
 
 ## Licencia y atribución

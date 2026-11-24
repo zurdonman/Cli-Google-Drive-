@@ -1,0 +1,42 @@
+[
+ {
+  "id": "s1",
+  "text": "En 2024, los centros de datos gastaron 415 TWh.",
+  "at": 1.5
+ },
+ {
+  "id": "s2",
+  "text": "El 1,5 % de la electricidad del mundo.",
+  "at": 5.4
+ },
+ {
+  "id": "s3",
+  "text": "En 2025, un 17 % más: 485 TWh.",
+  "at": 10.6
+ },
+ {
+  "id": "s4",
+  "text": "La AIE proyecta 945 TWh para 2030: el doble.",
+  "at": 14.1
+ },
+ {
+  "id": "s5",
+  "text": "Pero una tarea de IA cuesta cada vez menos.",
+  "at": 20.2
+ },
+ {
+  "id": "s6",
+  "text": "Diez veces menos energía por tarea, cada año.",
+  "at": 23.3
+ },
+ {
+  "id": "s7",
+  "text": "Razonar o generar vídeo: cientos de veces más.",
+  "at": 30.0
+ },
+ {
+  "id": "s8",
+  "text": "Más eficientes. Y aun así, el doble de electricidad.",
+  "at": 34.0
+ }
+]

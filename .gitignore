@@ -10,3 +10,15 @@ account*.zip
 credentials*.json
 client_secret*.json
 Downloads/
+
+# --- films/ (cortos hechos con lemo-opuscar dentro de este repo) ---
+# Fuentes: OFL, pero pesadas y descargables de github.com/google/fonts.
+films/*/fonts/
+# Intermedios de render y del entorno de render.
+films/*/out/
+films/*/events.json
+films/*/*.mp4.lock
+node_modules/
+.ffbin/
+.nss/
+.release/

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>DIEZ · la electricidad de la IA</title>
+<style>
+  @font-face{font-family:"BH Sans";src:url(fonts/Jost-VF.ttf) format("truetype");font-weight:100 900}
+  html,body{margin:0;overflow:hidden;background:#F5E8E1}
+  canvas{display:block}
+</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script type="module">
+/* DIEZ · Bauhaus Shapes — electricidad de los centros de datos y energía por tarea de IA (AIE 2025/2026).
+   contrato: window.DUR, window.render(t), window.READY, window.EV, window.TEXTS(t)
+   Paleta Sorbet. Una sola escala de área para todo el film. Sin degradados ni sombras.
+   Sistema tipográfico: arriba a la izquierda, la voz del film (una línea corta); sobre las formas, los números;
+   abajo a la derecha, el bloque de subtítulos. Nada más. */
+import { mulberry, clamp, lerp, seg, eo, ei, eio, back } from '/core/lib.js';
+
+const Q = new URLSearchParams(location.search);
+const TEX = Q.get('tex') !== '0', NOSUB = Q.get('nosub') === '1';
+const W = 1920, H = 1080, TAU = Math.PI * 2;
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const SANS = '"BH Sans"';
+const P = { paper: '#F5E8E1', red: '#E9476B', blue: '#3552E8', yel: '#F6B12F', tint: '#94D3BF', ink: '#1F3340', light: '#F5E8E1' };
+
+/* ---------- kit ---------- */
+const disc = (x, y, r, col) => { if (r <= 0) return; g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); };
+const rect = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+const poly = (pts, col) => { g.fillStyle = col; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fill(); };
+function line(pts, col, w = 5){ if (pts.length < 2) return; g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.lineJoin = 'round';
+  g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+const arc = (x, y, r, a0, a1, col, w = 5) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.beginPath(); g.arc(x, y, r, a0, a1); g.stroke(); };
+const cross = (x, y, col, s = 14, w = 2) => { line([[x - s, y], [x + s, y]], col, w); line([[x, y - s], [x, y + s]], col, w); };
+
+/* type + readcheck bookkeeping */
+let REC = null;
+function T(str, x, y, o = {}, id = null){
+  const { size = 40, weight = 800, col = P.ink, align = 'left', base = 'alphabetic', track = 0 } = o;
+  g.save(); g.translate(x, y);
+  g.font = `${weight} ${size}px ${SANS}`; g.fillStyle = col; g.textAlign = align; g.textBaseline = base;
+  g.letterSpacing = track ? `${track}px` : '0px';
+  g.fillText(str, 0, 0);
+  if (REC && id !== false){
+    const w = g.measureText(str).width, x0 = align === 'center' ? -w / 2 : align === 'right' ? -w : 0;
+    const y0 = base === 'middle' ? -size * 0.4 : -size * 0.78, y1 = base === 'middle' ? size * 0.4 : size * 0.2;
+    const m = g.getTransform(), pts = [[x0, y0], [x0 + w, y0], [x0, y1], [x0 + w, y1]]
+      .map(([px, py]) => [m.a * px + m.c * py + m.e, m.b * px + m.d * py + m.f]);
+    REC.push({ id: id || str, text: str,
+      x0: Math.round(Math.min(...pts.map(p => p[0]))), y0: Math.round(Math.min(...pts.map(p => p[1]))),
+      x1: Math.round(Math.max(...pts.map(p => p[0]))), y1: Math.round(Math.max(...pts.map(p => p[1]))) });
+  }
+  g.restore();
+}
+const measure = (str, size, weight = 800, track = 0) => { g.font = `${weight} ${size}px ${SANS}`; g.letterSpacing = track ? `${track}px` : '0px'; return g.measureText(str).width; };
+/* letters rise out of a slot on their baseline */
+function rise(str, x, y, k, o = {}, id = null){
+  if (k <= 0) return;
+  const size = o.size || 40, weight = o.weight ?? 800, track = o.track ?? 0, align = o.align || 'left';
+  const w = measure(str, size, weight, track), x0 = align === 'right' ? x - w : align === 'center' ? x - w / 2 : x;
+  g.save(); g.beginPath(); g.rect(x0 - 20, y - size * 0.95, w + 40, size * 1.2); g.clip();
+  T(str, x, y + (1 - k) * size * 0.95, o, k > 0.995 ? id : false); g.restore();
+}
+/* a reading line reveals left to right under an edge */
+function reveal(str, x, y, k, o = {}, id = null){
+  if (k <= 0) return;
+  const size = o.size || 40, weight = o.weight ?? 500, track = o.track ?? 0, w = measure(str, size, weight, track);
+  g.save(); g.beginPath(); g.rect(x - 12, y - size * 0.95, (w + 24) * k, size * 1.2); g.clip(); T(str, x, y, o, k > 0.995 ? id : false); g.restore();
+}
+/* a label that slides out from under an edge, with a leader line back to the thing it names */
+function leader(px, py, lx, ly, k, w = 3){
+  if (k <= 0) return;
+  line([[px, py], [lerp(px, lx, k), lerp(py, ly, k)]], P.ink, w);
+  if (k > 0.995) disc(px, py, 7, P.ink);
+}
+/* paper: fine tooth, a touch stronger in the dark inks */
+let TOOTH = null;
+function buildTooth(){
+  const rnd = mulberry(11), N = new Float32Array(W * H);
+  const gw = 48, gh = 28, grid = Array.from({ length: (gw + 1) * (gh + 1) }, () => rnd() * 2 - 1);
+  const vn = (x, y) => { const fx = x / W * gw, fy = y / H * gh, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
+    const s = t => t * t * (3 - 2 * t), a = grid[iy * (gw + 1) + ix], b = grid[iy * (gw + 1) + ix + 1],
+      c = grid[(iy + 1) * (gw + 1) + ix], d = grid[(iy + 1) * (gw + 1) + ix + 1];
+    return lerp(lerp(a, b, s(tx)), lerp(c, d, s(tx)), s(ty)); };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+    const fibre = Math.sin(x * 0.013 + y * 0.0035 + Math.sin(y * 0.002) * 3) * 0.5 + Math.sin(x * 0.0021 - y * 0.011) * 0.5;
+    N[y * W + x] = (rnd() - 0.5) * 1.0 + fibre * 0.14 + vn(x, y) * 0.22;
+  }
+  return N;
+}
+function finish(){
+  if (!TEX) return;
+  if (!TOOTH) TOOTH = buildTooth();
+  const img = g.getImageData(0, 0, W, H), d = img.data;
+  for (let i = 0, p = 0; i < d.length; i += 4, p++){
+    const n = TOOTH[p], lum = (d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11) / 255, amp = 7.5 - lum * 2.5;
+    d[i] = clamp(d[i] + n * amp, 0, 255); d[i + 1] = clamp(d[i + 1] + n * amp, 0, 255); d[i + 2] = clamp(d[i + 2] + n * amp * 0.85, 0, 255);
+  }
+  g.putImageData(img, 0, 0);
+}
+
+/* ================= una sola escala de área para todo el film ================= */
+const DUR = 42.0;
+const U = 122.0;                                   // px² por TWh
+const R = twh => Math.sqrt(twh * U);               // 415 → 225 · 485 → 243 · 945 → 340
+const R415 = R(415), R485 = R(485), R945 = R(945);
+const CAM0 = { x: W / 2, y: H / 2, s: 1 };
+const camSet = c => g.setTransform(c.s, 0, 0, c.s, W / 2 - c.s * c.x, H / 2 - c.s * c.y);
+const camLerp = (a, b, k) => ({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), s: a.s * Math.pow(b.s / a.s, k) });
+/* la retícula de construcción */
+const GRID = [[96, 268, 1824, 268, 0.00], [96, 268, 96, 1000, 0.06], [1824, 268, 1824, 1000, 0.12]];
+function drawGrid(t, tIn, tOut, corners = true){
+  GRID.forEach(l => { const b = eo(seg(t, tIn + l[4], tIn + l[4] + 0.8)), a = ei(seg(t, tOut, tOut + 0.6)); if (b <= a) return;
+    const Pt = k => [lerp(l[0], l[2], k), lerp(l[1], l[3], k)]; line([Pt(a), Pt(b)], P.ink, 2); });
+  if (!corners) return;
+  [[96, 268], [1824, 268], [96, 1000], [1824, 1000]].forEach(([x, y], i) => {
+    const q = Math.min(eo(seg(t, tIn + 0.3 + i * 0.05, tIn + 0.62 + i * 0.05)), 1 - ei(seg(t, tOut, tOut + 0.5)));
+    if (q > 0) cross(x, y, P.ink, 13 * q, 2);
+  });
+}
+const mark = (x, y, k) => { if (k > 0) cross(x, y, P.ink, 13 * k, 2); };
+/* la voz del film, siempre en el mismo sitio: arriba a la izquierda, una línea */
+const VOICE = { x: 132, y: 352 };
+function voice(t, over, line, t0, id){
+  const k1 = eo(seg(t, t0, t0 + 0.5)), k2 = eo(seg(t, t0 + 0.22, t0 + 0.95));
+  if (k1 > 0) rise(over, VOICE.x, VOICE.y, k1, { size: 26, weight: 700, track: 6 }, id + '-over');
+  if (k2 > 0 && line) reveal(line, VOICE.x + 4, VOICE.y + 62, k2, { size: 38, weight: 500, track: 0.3 }, id);
+}
+
+/* ================= S1 · 415 TWh en 2024 (0 – 9.5) ================= */
+const C1 = { x: 1010, y: 716 };
+const T1 = { grid0: 0.10, land0: 1.15, land1: 1.95, num0: 2.25, title0: 4.40, out0: 9.0 };
+function S1(t){
+  camSet(camLerp(CAM0, { x: 906, y: 640, s: 1.0 }, eio(seg(t, 6.2, 9.4))));
+  rect(-900, -900, W + 1800, H + 1800, P.paper);
+  drawGrid(t, T1.grid0, T1.out0);
+  /* la bola cae y se aplasta una vez sobre el papel */
+  const k = back(seg(t, T1.land0, T1.land1), 2.1);
+  if (k > 0){
+    const sq = 1 - 0.16 * Math.sin(clamp(seg(t, T1.land0 + 0.26, T1.land1) * Math.PI));
+    const y = lerp(C1.y - 760, C1.y, ei(clamp(seg(t, T1.land0, T1.land1) / 0.66)));
+    g.save(); g.translate(C1.x, y); g.scale(1 / sq, sq); disc(0, 0, R415 * k, P.red); g.restore();
+    mark(C1.x, C1.y, eo(seg(t, T1.land1, T1.land1 + 0.4)));
+  }
+  /* el número, dentro de la forma: la escribe el propio cuerpo */
+  { const kk = eo(seg(t, T1.num0, T1.num0 + 0.5));
+    const wNum = measure('415', 176, 800, -6), wTwh = measure('TWh', 56, 400, 6), gap = 22;
+    const total = wNum + gap + wTwh, x0 = C1.x - total / 2;
+    rise('415', x0, C1.y + 30, kk, { size: 176, weight: 800, track: -6, col: P.light }, 's1-415');
+    rise('TWh', x0 + wNum + gap, C1.y + 20, eo(seg(t, T1.num0 + 0.22, T1.num0 + 0.7)), { size: 56, weight: 400, track: 6, col: P.light }, 's1-twh');
+    rise('2024 · 1,5 % del mundo', C1.x - 128, C1.y + 104, eo(seg(t, T1.num0 + 0.45, T1.num0 + 0.95)), { size: 32, weight: 600, track: 4, col: P.light }, 's1-year');
+  }
+  /* el título */
+  rise('DIEZ', VOICE.x, VOICE.y, eo(seg(t, T1.title0, T1.title0 + 0.4)), { size: 96, weight: 800, track: -3 }, 'film-title');
+  reveal('eficiencia de la IA y su factura', VOICE.x + 4, VOICE.y + 56,
+    eo(seg(t, T1.title0 + 0.12, T1.title0 + 0.55)), { size: 32, weight: 500, track: 0.3 }, 'kicker');
+}
+
+/* ================= S2 · 485 (2025) y 945 (2030) (9.5 – 19) ================= */
+const C2 = { x: 760, y: 660 }, LX = 1540;           // columna de etiquetas con guía
+const T2 = { in0: 9.5, in1: 10.4, r25a: 10.6, r25b: 11.3, l25: 11.4, r30a: 12.6, r30b: 13.9, l30: 14.0, out0: 17.6 };
+function S2(t){
+  camSet(camLerp({ x: 906, y: 640, s: 1.0 }, CAM0, eio(seg(t, T2.in0, T2.in1))));
+  rect(-900, -900, W + 1800, H + 1800, P.paper);
+  drawGrid(t, T2.in0 - 0.7, 99, false);
+  /* el núcleo 2024 y el anillo 2025, lo más nuevo por fuera */
+  disc(C2.x, C2.y, R415, P.red);
+  { const w = measure('415', 104, 800, -5); rise('415', C2.x - w / 2, C2.y + 20, 1, { size: 104, weight: 800, track: -5, col: P.light }, 's2-415'); }
+  const q25 = back(seg(t, T2.r25a, T2.r25b), 1.5);
+  if (q25 > 0){ disc(C2.x, C2.y, lerp(R415, R485, q25), P.yel); disc(C2.x, C2.y, R415, P.red); mark(C2.x, C2.y, 1); }
+  /* 2030: una proyección se dibuja como contorno, no como superficie */
+  const q30 = eo(seg(t, T2.r30a, T2.r30b));
+  if (q30 > 0){
+    const a0 = -Math.PI / 2;
+    arc(C2.x, C2.y, R945, a0, a0 + TAU * q30, P.blue, 9);
+    if (q30 > 0.995) cross(C2.x, C2.y + R945, P.blue, 12, 3);
+  }
+  /* etiquetas con guía: 415, 485 y 945 se leen en una columna a la derecha */
+  const kL = eo(seg(t, T2.l25, T2.l25 + 0.7));
+  if (kL > 0){
+    leader(C2.x + R485 * 0.70, C2.y - R485 * 0.70, LX - 18, 372, kL);
+    rise('485 TWh', LX, 384, eo(seg(t, T2.l25 + 0.3, T2.l25 + 0.75)), { size: 44, weight: 800, track: -1 }, 's2-485');
+    rise('2025 · +17 %', LX + 2, 424, eo(seg(t, T2.l25 + 0.45, T2.l25 + 0.9)), { size: 26, weight: 600, track: 3 }, 's2-y2025');
+  }
+  const kL3 = eo(seg(t, T2.l30, T2.l30 + 0.8));
+  if (kL3 > 0){
+    leader(C2.x + R945 * 0.62, C2.y + R945 * 0.78, LX - 18, 596, kL3);
+    rise('945 TWh', LX, 608, eo(seg(t, T2.l30 + 0.3, T2.l30 + 0.8)), { size: 44, weight: 800, track: -1, col: P.blue }, 's2-945');
+    rise('2030 · proyección', LX + 2, 648, eo(seg(t, T2.l30 + 0.45, T2.l30 + 0.95)), { size: 26, weight: 600, track: 3 }, 's2-proj');
+  }
+  voice(t, 'CRECE EL ÁREA', 'más electricidad cada año', T2.in1 + 0.5, 's2');
+}
+
+/* ================= S3 · la misma tarea, diez veces más ligera (19 – 30) ================= */
+const C3 = { x: 560, y: 690 };                       // la bola fantasma
+const LC = { x: 1150, y: 665 }, LR = 226;            // la lente
+const HOLE = { x: C3.x + Math.cos(0.62) * R415, y: C3.y + Math.sin(0.62) * R415 };
+const rl = n => LR * Math.pow(10, -n / 2);           // ÷10 de área por año ⇒ radio ÷√10
+const T3 = { in0: 19.0, in1: 20.0, ring0: 20.3, ring1: 21.1, tan0: 21.0, lens0: 21.5, lens1: 22.3,
+             d: [22.2, 22.9, 23.6, 24.3], fac0: 25.1, num0: 22.1, end0: 29.0 };
+function S3(t){
+  camSet(camLerp({ x: 906, y: 640, s: 1.0 }, CAM0, eio(seg(t, T3.in0, T3.in1))));
+  rect(-900, -900, W + 1800, H + 1800, P.paper);
+  drawGrid(t, T3.in0 - 0.6, 99, false);
+  /* la bola se queda como contorno: el fantasma que sirve de comparación */
+  const fade = eio(seg(t, T3.ring0, T3.ring1));
+  if (fade < 1) disc(C3.x, C3.y, R415, P.red);
+  arc(C3.x, C3.y, R415, 0, TAU, P.ink, 4);
+  arc(C3.x, C3.y, R945, 0, TAU, P.tint, 3);
+  /* el compás marca el corte antes de quitar nada */
+  const qc = eo(seg(t, T3.ring0, T3.ring1));
+  if (qc > 0) arc(HOLE.x, HOLE.y, 30, -Math.PI / 2, -Math.PI / 2 + TAU * qc, P.ink, 3);
+  if (qc > 0.995) disc(HOLE.x, HOLE.y, 30, P.paper);
+  /* tangentes: el corte y la lente están unidos, la pieza viene de ahí */
+  const ql = eo(seg(t, T3.lens0, T3.lens1));
+  if (ql > 0){
+    const dx = LC.x - HOLE.x, dy = LC.y - HOLE.y, dd = Math.hypot(dx, dy), a0 = Math.atan2(dy, dx);
+    const beta = Math.acos(clamp((LR - 30) / dd, -1, 1));
+    for (const sg of [1, -1]){
+      const p1 = [HOLE.x + Math.cos(a0 + sg * Math.PI / 2) * 30, HOLE.y + Math.sin(a0 + sg * Math.PI / 2) * 30];
+      const p2 = [LC.x + Math.cos(a0 + sg * beta) * LR, LC.y + Math.sin(a0 + sg * beta) * LR];
+      line([p1, [lerp(p1[0], p2[0], ql), lerp(p1[1], p2[1], ql)]], P.ink, 3);
+    }
+  }
+  if (ql > 0.5){
+    disc(LC.x, LC.y, LR * ql, P.tint);
+    const steps = [[P.red, '2024'], [P.yel, '2025'], [P.blue, '2026'], [P.paper, '2027']];
+    steps.forEach(([col, yr], i) => {
+      const kk = back(seg(t, T3.d[i], T3.d[i] + 0.5), 1.7); if (kk <= 0) return;
+      disc(LC.x, LC.y, rl(i) * kk, col);
+    });
+    /* una escala de cuatro marcas a la derecha de la lente: años y energía, la misma guía */
+    const SX = 1470;
+    line([[SX, 300], [SX, 900]], P.ink, 2);
+    const vals = ['0,24', '0,024', '0,0024', '0,00024'];
+    steps.forEach(([col, yr], i) => {
+      const kk = eo(seg(t, T3.d[i] + 0.25, T3.d[i] + 0.7)); if (kk <= 0) return;
+      const y = 330 + i * 132;
+      line([[SX, y - 8], [SX + 22 * kk, y - 8]], P.ink, 3);
+      rise(yr, SX + 34, y, kk, { size: 30, weight: 700, track: 2 }, 's3-y' + i);
+      rise(vals[i] + ' Wh', SX + 34, y + 40, kk, { size: 28, weight: 500, track: 0.5 }, 's3-v' + i);
+    });
+  }
+  voice(t, 'CADA AÑO, ÷10', 'la misma tarea, diez veces más ligera', T3.in1 + 0.55, 's3');
+}
+
+/* ================= S4 · la tarea contraria (30 – 35.4) ================= */
+const T4 = { in0: 29.0, in1: 29.8, txt0: 30.0, vid0: 30.5, vid1: 31.4, eq0: 31.9, out0: 34.0 };
+const TX = 470, VX = 1150, BY = 660, rTxt = 26, rVid = 250;
+function S4(t){
+  camSet(CAM0);
+  rect(-900, -900, W + 1800, H + 1800, P.paper);
+  drawGrid(t, T4.in0 + 0.2, 99, false);
+  const k1 = back(seg(t, T4.txt0, T4.txt0 + 0.5), 1.7);
+  if (k1 > 0){
+    disc(TX, BY, rTxt * k1, P.red); mark(TX, BY, 1);
+    if (k1 > 0.995){
+      leader(TX, BY + rTxt - 2, TX - 40, BY + 150, eo(seg(t, T4.txt0 + 0.3, T4.txt0 + 0.7)));
+      rise('consulta de texto', TX - 46, BY + 186, eo(seg(t, T4.txt0 + 0.45, T4.txt0 + 0.85)), { size: 30, weight: 600, track: 1 }, 's4-txt');
+    }
+  }
+  const k2 = back(seg(t, T4.vid0, T4.vid1), 1.5);
+  if (k2 > 0){
+    disc(VX, BY, rVid * k2, P.blue);
+    if (k2 > 0.995){
+      const w = measure('×100', 92, 800, -4); rise('×100', VX - w / 2, BY + 12, eo(seg(t, T4.vid1, T4.vid1 + 0.45)), { size: 92, weight: 800, track: -4, col: P.light }, 's4-x100');
+      rise('razonar · generar vídeo', VX - 168, BY - rVid - 32, eo(seg(t, T4.vid1 + 0.2, T4.vid1 + 0.7)), { size: 30, weight: 600, track: 1 }, false);
+    }
+  }
+  if (t >= T4.eq0){
+    const kk = back(seg(t, T4.eq0, T4.eq0 + 0.35), 1.4), mx = 795;
+    if (kk > 0){ const hh = (BY + 6) - 60; rect(mx - 46 * kk, hh - 26, 92 * kk, 16, P.ink); rect(mx - 46 * kk, hh + 18, 92 * kk, 16, P.ink); }
+  }
+  voice(t, 'LA TAREA CONTRARIA', 'razonar o generar vídeo', T4.in1 + 0.4, 's4');
+}
+
+/* ================= S5 · el cierre: 945 ÷ 415 ≈ 2,3 (35.4 – 42) ================= */
+const T5 = { in0: 34.0, in1: 34.6, a0: 34.7, b0: 35.1, eq0: 35.5, res0: 35.9, credit0: 37.4 };
+const A5 = { x: 470, y: 640 }, B5 = { x: 1200, y: 640 };
+function S5(t){
+  /* el cierre: las dos formas a la misma escala, el signo = entre ellas, el resultado, y la ficha.
+     la última imagen es un cartel: no hay salida, el film termina en el dibujo. */
+  camSet(CAM0);
+  rect(-900, -900, W + 1800, H + 1800, P.paper);
+  drawGrid(t, T5.in0 + 0.3, 99, false);
+  const ka = back(seg(t, T5.a0, T5.a0 + 0.32), 1.6), kb = back(seg(t, T5.b0, T5.b0 + 0.32), 1.6);
+  if (ka > 0){ disc(A5.x, A5.y, R415 * ka, P.red);
+    const w = measure('415', 84, 800, -4); rise('415', A5.x - w / 2, A5.y + 30, 1, { size: 84, weight: 800, track: -4, col: P.light }, 's5-415'); }
+  if (kb > 0){ disc(B5.x, B5.y, R945 * kb, P.blue);
+    const w = measure('945', 104, 800, -4); rise('945', B5.x - w / 2, B5.y + 36, 1, { size: 104, weight: 800, track: -4, col: P.light }, 's5-945'); }
+  const eqk = back(seg(t, T5.eq0, T5.eq0 + 0.2), 1.4);
+  if (eqk > 0){ const mx = 777; rect(mx - 42 * eqk, B5.y - 42, 84 * eqk, 16, P.ink); rect(mx - 42 * eqk, B5.y + 6, 84 * eqk, 16, P.ink); }
+  rise('×2,3', B5.x + R945 + 26, B5.y - 6, eo(seg(t, T5.res0, T5.res0 + 0.5)), { size: 60, weight: 800, track: -2 }, 's5-res');
+  voice(t, 'DIEZ', 'sube la eficiencia y la factura', T5.in1, 's5');
+  /* la ficha, abajo a la izquierda: entra con la ecuación, no la tapa */
+  const k1 = eo(seg(t, T5.credit0, T5.credit0 + 0.5)), k2 = eo(seg(t, T5.credit0 + 0.2, T5.credit0 + 0.7));
+  rise('DIEZ · ESTILO BAUHAUS SHAPES', 132, 930, k1, { size: 23, weight: 700, track: 5 }, 's5-credit');
+  rise('fuente: AIE · 2025, 2026', 132, 966, k2, { size: 20, weight: 500, track: 0.3 }, 's5-source');
+}
+
+/* ================= subtítulos: bloque de papel fijo abajo a la derecha ================= */
+const SUBS = [
+  { t0: 1.5, t1: 5.1, es: 'En 2024, los centros de datos gastaron 415 TWh.' },
+  { t0: 5.4, t1: 8.9, es: 'El 1,5 % de la electricidad del mundo.' },
+  { t0: 10.6, t1: 13.6, es: 'En 2025, un 17 % más: 485 TWh.' },
+  { t0: 14.1, t1: 17.4, es: 'La AIE proyecta 945 TWh para 2030: el doble.' },
+  { t0: 20.2, t1: 23.0, es: 'Pero una tarea de IA cuesta cada vez menos.' },
+  { t0: 23.3, t1: 28.8, es: 'Diez veces menos energía por tarea, cada año.' },
+  { t0: 30.0, t1: 33.8, es: 'Razonar o generar vídeo: cientos de veces más.' },
+  { t0: 34.0, t1: 39.6, es: 'Más eficientes. Y aun así, el doble de electricidad.' },
+];
+function subBox(t){
+  const cue = SUBS.find(c => t >= c.t0 && t < c.t1); if (!cue) return null;
+  const w = Math.ceil(measure(cue.es, 34, 700, 0.5)) + 40 + 40;
+  return { cue, x0: W - w - 24, y0: H - 100, x1: W - 24, y1: H - 20 };
+}
+function subtitles(t){
+  const b = subBox(t); if (!b) return;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const k = eo(seg(t, b.cue.t0, b.cue.t0 + 0.28));
+  rect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0, P.paper);
+  rect(b.x0, b.y1 - (b.y1 - b.y0) * k, 8, (b.y1 - b.y0) * k, P.red);
+  T(b.cue.es, b.x0 + 40, b.y0 + 54, { size: 34, weight: 700, track: 0.5 }, false);
+}
+
+/* ================= sonido (segundos absolutos) ================= */
+function events(){
+  const ev = [], E = (t, type, o = {}) => ev.push({ t: +t.toFixed(3), type, pan: 0, ...o });
+  for (let i = 0; i < 3; i++) E(T1.grid0 + i * 0.06, 'grid', { d: 0.8, pan: -0.6 + i * 0.5 });
+  E(T1.land1 - 0.05, 'snap', { pan: -0.1 }); E(T1.land1, 'land', { key: 'D' });
+  E(T1.num0, 'block', { pan: -0.1 }); E(T1.title0, 'block', { pan: -0.7 });
+  E(T2.r25b - 0.05, 'snap', { pan: -0.1 }); E(T2.r25b, 'land', { key: 'Bm' });
+  E(T2.r30a, 'compass', { d: T2.r30b - T2.r30a }); E(T2.r30b, 'accent', { key: 'G' });
+  E(T2.l25 + 0.3, 'tick', { pan: 0.6 }); E(T2.l30 + 0.3, 'tick', { pan: 0.6 });
+  E(T2.in1 + 0.5, 'slide', { d: 0.8, pan: -0.4 });
+  E(T3.ring0, 'compass', { d: T3.ring1 - T3.ring0 }); E(T3.lens0, 'lift', { d: T3.lens1 - T3.lens0 });
+  T3.d.forEach((t0, i) => { E(t0 + 0.27, 'land', { key: ['D', 'G', 'A', 'Bm'][i], small: 1 }); E(t0 + 0.3, 'ring', { k: i + 1, pan: 0.4 }); });
+  E(T3.fac0 - 0.2, 'accent', { key: 'D' }); E(T3.in1 + 0.55, 'slide', { d: 0.8, pan: -0.4 }); E(T3.end0 - 0.5, 'compass', { d: 0.5 });
+  E(T4.txt0, 'pop', { pan: -0.4 }); E(T4.vid1 - 0.05, 'snap', { pan: 0.3 }); E(T4.vid1, 'land', { key: 'Em' });
+  E(T4.eq0 + 0.2, 'block', { pan: 0 }); E(T4.in1 + 0.4, 'slide', { d: 0.7, pan: -0.4 });
+  E(T5.a0, 'land', { key: 'D' }); E(T5.b0, 'land', { key: 'G' }); E(T5.eq0 + 0.18, 'snap', { pan: 0.1 });
+  E(T5.res0, 'accent', { key: 'A' }); E(T5.credit0 - 0.5, 'slide', { d: 0.8, pan: 0.2 }); E(T5.credit0, 'block', { pan: 0.3 });
+  E(DUR - 0.5, 'final', { key: 'D' });
+  return ev.sort((a, b) => a.t - b.t);
+}
+
+/* ================= frame ================= */
+function draw(t){
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  if (t < 9.5) S1(t);
+  else if (t < 19.0) S2(t);
+  else if (t < 30.0) S3(t);
+  else if (t < T5.in0) S4(t);
+  else S5(t);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+}
+window.DUR = DUR;
+window.EV = events();
+window.render = function(t){ draw(t); finish(); if (!NOSUB) subtitles(t); };
+window.SUBBOX = t => subBox(t);
+window.SUBS = SUBS;
+window.TEXTS = function(t){
+  if ([[9.0, 10.1], [19.0, 20.1], [29.0, 29.9], [34.0, 34.7]].some(([a, b]) => t >= a && t < b)) return [];
+  REC = []; draw(t); const out = REC; REC = null;
+  return out.filter(o => o.x1 > o.x0);
+};
+await document.fonts.load('800 100px ' + SANS); await document.fonts.load('400 100px ' + SANS); await document.fonts.load('500 100px ' + SANS);
+window.READY = true;
+</script>
+</body></html>
