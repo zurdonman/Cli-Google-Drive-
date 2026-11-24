@@ -207,12 +207,14 @@ con su `index.html` (contrato `render(t)`), su tratamiento, sus datos y el `.mp4
 |---|---|---|---|
 | **DIEZ** — la eficiencia de la IA y su factura | Bauhaus Shapes | 42 s · 1920×1080 · 30 fps | [`films/kb-per-watt/`](films/kb-per-watt/) · [`diez.mp4`](films/kb-per-watt/diez.mp4) · [`diez.es.srt`](films/kb-per-watt/diez.es.srt) |
 | **PROMPT MAESTRO** — esperpento de la subvención de la IA, con Iván y Zacarías | Rubber Hose | 68 s · 1920×1080 · 24 fps | [`films/prompt-maestro/`](films/prompt-maestro/) · [`prompt-maestro.mp4`](films/prompt-maestro/prompt-maestro.mp4) · [`prompt-maestro.es.srt`](films/prompt-maestro/prompt-maestro.es.srt) |
+| **LAS CUENTAS CLARAS** — la deuda entre amigos y la escapada a Valencia, con Luis, Nuria y Paco | Mid-century Toon | 78 s · 1920×1080 · 24 fps | [`films/pagar-lo-tuyo/`](films/pagar-lo-tuyo/) · [`pagar-lo-tuyo.mp4`](films/pagar-lo-tuyo/pagar-lo-tuyo.mp4) · [`pagar-lo-tuyo.es.srt`](films/pagar-lo-tuyo/pagar-lo-tuyo.es.srt) |
 
 Cómo se montó cada uno, qué sustitutos hicieron falta en un entorno sin Chromium, sin ffmpeg y sin los
 GitHub Release assets de Lemo (navegador de `@sparticuz/chromium`, ffmpeg del wheel de PyPI
 `imageio-ffmpeg`, música sintetizada en vez de muestreada, sin voz), y cómo repetir el render paso a paso:
 [`films/kb-per-watt/README.md`](films/kb-per-watt/README.md),
-[`films/prompt-maestro/README.md`](films/prompt-maestro/README.md) y
+[`films/prompt-maestro/README.md`](films/prompt-maestro/README.md),
+[`films/pagar-lo-tuyo/README.md`](films/pagar-lo-tuyo/README.md) y
 [`build/setup-film-env.sh`](build/setup-film-env.sh).
 
 ## Desarrollo y pruebas
