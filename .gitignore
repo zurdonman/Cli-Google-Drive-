@@ -22,3 +22,5 @@ node_modules/
 .ffbin/
 .nss/
 .release/
+# TTS de trabajo: los mp3 de origen; la narración y la mezcla van en out/ (ignorado)
+films/*/voice/
