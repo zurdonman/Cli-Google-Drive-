@@ -18,6 +18,7 @@ export const SHOTS = [
 
 // ——— textos de la voz (se sintetizan tal cual; los subtítulos salen de aquí) ———
 export const TEXT = {
+  n8b: 'Pide tu copia del acta, una por candidatura, y no te vayas hasta que cuelguen el cartel con los seis datos en la puerta. Y si algo no cuadra, escribe tu protesta al pie antes de firmar.',
   n1: 'El veintinueve de noviembre eres los ojos de SALF en Castellón. Veinticuatro colegios, ciento doce mesas. Con Brian y Eugenio no estás solo.',
   n1b: 'Hoy no improvisas: tienes un plan de diez pasos, de las ocho de la mañana a las nueve de la noche.',
   n2: 'A las ocho de la mañana, constitución. Comprueba dos urnas precintadas, blanca del Congreso y sepia del Senado. Papeletas de todas las candidaturas, cabina, censo y acta. Si ves la letra C, ese votante no vota aquí: votó por correo. Pide tu copia del acta de constitución.',
@@ -40,29 +41,30 @@ export const TEXT = {
 };
 
 // quién dice cada texto
-export const WHO = { n1: 'n', n1b: 'n', n2: 'n', n2b: 'n', n3: 'n', n3b: 'n', n4: 'n', n4b: 'n', n5: 'n', n5b: 'n', n6: 'n', n6b: 'n', n7: 'n', n7b: 'n', n8: 'n', n9a: 'n', n9b: 'n', ap1: 'a', pr1: 'p' };
+export const WHO = { n8b: 'n', n1: 'n', n1b: 'n', n2: 'n', n2b: 'n', n3: 'n', n3b: 'n', n4: 'n', n4b: 'n', n5: 'n', n5b: 'n', n6: 'n', n6b: 'n', n7: 'n', n7b: 'n', n8: 'n', n9a: 'n', n9b: 'n', ap1: 'a', pr1: 'p' };
 
 // ——— voz: id, cuándo entra, qué voz de TTS usa y qué texto dice ———
 export const VOICES = [
   { id: 'n1', at: 0.60, who: 'narrador', text: TEXT.n1 },
-  { id: 'n1b', at: 11.20, who: 'narrador', text: TEXT.n1b },
+  { id: 'n1b', at: 10.90, who: 'narrador', text: TEXT.n1b },
   { id: 'n2', at: 20.60, who: 'narrador', text: TEXT.n2 },
-  { id: 'n2b', at: 41.00, who: 'narrador', text: TEXT.n2b },
+  { id: 'n2b', at: 40.60, who: 'narrador', text: TEXT.n2b },
   { id: 'n3', at: 55.60, who: 'narrador', text: TEXT.n3 },
-  { id: 'n3b', at: 75.00, who: 'narrador', text: TEXT.n3b },
+  { id: 'n3b', at: 74.20, who: 'narrador', text: TEXT.n3b },
   { id: 'n4', at: 95.60, who: 'narrador', text: TEXT.n4 },
-  { id: 'n4b', at: 114.40, who: 'narrador', text: TEXT.n4b },
+  { id: 'n4b', at: 114.00, who: 'narrador', text: TEXT.n4b },
   { id: 'pr1', at: 125.80, who: 'presidente', text: TEXT.pr1 },
   { id: 'ap1', at: 132.80, who: 'apoderado', text: TEXT.ap1 },
   { id: 'n5', at: 140.60, who: 'narrador', text: TEXT.n5 },
-  { id: 'n5b', at: 162.00, who: 'narrador', text: TEXT.n5b },
+  { id: 'n5b', at: 161.60, who: 'narrador', text: TEXT.n5b },
   { id: 'n6', at: 175.60, who: 'narrador', text: TEXT.n6 },
-  { id: 'n6b', at: 190.00, who: 'narrador', text: TEXT.n6b },
+  { id: 'n6b', at: 189.60, who: 'narrador', text: TEXT.n6b },
   { id: 'n7', at: 205.60, who: 'narrador', text: TEXT.n7 },
-  { id: 'n7b', at: 220.40, who: 'narrador', text: TEXT.n7b },
+  { id: 'n7b', at: 220.00, who: 'narrador', text: TEXT.n7b },
   { id: 'n8', at: 235.60, who: 'narrador', text: TEXT.n8 },
-  { id: 'n9a', at: 288.60, who: 'narrador', text: TEXT.n9a },
-  { id: 'n9b', at: 310.60, who: 'narrador', text: TEXT.n9b },
+  { id: 'n8b', at: 258.60, who: 'narrador', text: TEXT.n8b },
+  { id: 'n9a', at: 288.50, who: 'narrador', text: TEXT.n9a },
+  { id: 'n9b', at: 310.40, who: 'narrador', text: TEXT.n9b },
 ];
 
 // ——— golpes de imagen ———

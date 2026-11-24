@@ -11,173 +11,285 @@ Veinticuatro colegios, ciento doce mesas.
 Con Brian y Eugenio no estás solo.
 
 4
+00:00:10,900 --> 00:00:13,660
+Hoy no improvisas: tienes un plan de diez pasos,
+
+5
+00:00:13,680 --> 00:00:16,530
+de las ocho de la mañana a las nueve de la noche.
+
+6
 00:00:20,600 --> 00:00:23,320
 A las ocho de la mañana, constitución.
 
-5
+7
 00:00:23,340 --> 00:00:28,500
 Comprueba dos urnas precintadas, blanca del Congreso y sepia del Senado.
 
-6
+8
 00:00:28,520 --> 00:00:32,680
 Papeletas de todas las candidaturas, cabina, censo y acta.
 
-7
+9
 00:00:32,700 --> 00:00:37,080
 Si ves la letra C, ese votante no vota aquí: votó por correo.
 
-8
+10
 00:00:37,100 --> 00:00:39,910
 Pide tu copia del acta de constitución.
 
-9
+11
+00:00:40,600 --> 00:00:45,940
+En el acta de constitución constan los titulares y los suplentes que no entran,
+
+12
+00:00:45,960 --> 00:00:47,300
+con su justificante.
+
+13
+00:00:47,320 --> 00:00:51,460
+Y comprueba que hay tres sobres con recibos para el Tribunal.
+
+14
 00:00:55,600 --> 00:00:58,080
 A las nueve empieza la votación.
 
-10
+15
 00:00:58,100 --> 00:01:03,230
 El voto es personal: el presidente introduce el sobre sin tocarlo.
 
-11
+16
 00:01:03,250 --> 00:01:08,310
 Vale el DNI caducado, pero solo el original, nunca una fotocopia.
 
-12
+17
 00:01:08,330 --> 00:01:10,100
 También el QR de MiDNI.
 
-13
+18
 00:01:10,120 --> 00:01:13,330
 Si solo hay una elección, una sola equis.
 
-14
+19
+00:01:14,200 --> 00:01:20,030
+Si alguien llega y no está en el censo, solo vale certificado de alta o sentencia.
+
+20
+00:01:20,050 --> 00:01:24,260
+Y quien ha votado por correo no vota aquí: márcalo y avisa.
+
+21
 00:01:35,600 --> 00:01:38,740
 La coordinación es por WhatsApp con Brian y Eugenio:
 
-15
+22
 00:01:38,760 --> 00:01:42,700
 foto del acta a las ocho y media, avances a las dos y a las seis,
 
-16
+23
 00:01:42,720 --> 00:01:44,040
 incidencia al momento.
 
-17
+24
 00:01:44,060 --> 00:01:45,740
 Si tienes la app SALF Rutas,
 
-18
+25
 00:01:45,760 --> 00:01:49,760
 úsala como ayuda extra para marcar cubierto y guardar el registro.
 
-19
+26
 00:01:49,780 --> 00:01:53,240
 Es opcional: sin app lo haces igual de bien por WhatsApp.
 
-20
+27
+00:01:54,000 --> 00:01:57,450
+Manda foto y texto corto: colegio, hora y qué pasa.
+
+28
+00:01:57,470 --> 00:02:00,000
+Brian y Eugenio responden en minutos.
+
+29
 00:02:05,800 --> 00:02:07,070
 No puede usted pasar.
 
-21
+30
 00:02:07,090 --> 00:02:10,270
 La mesa está constituida y aquí la autoridad soy yo.
 
-22
+31
 00:02:12,800 --> 00:02:16,870
 Soy apoderada de SALF, artículo setenta y nueve de la LOREG,
 
-23
+32
 00:02:16,890 --> 00:02:19,420
 tengo derecho a estar sin interferir.
 
-24
+33
 00:02:20,600 --> 00:02:23,110
 Si te niegan la entrada, no discutas.
 
-25
+34
 00:02:23,130 --> 00:02:27,540
 Enseña credencial y DNI, y di la frase: artículo setenta y nueve.
 
-26
+35
 00:02:27,560 --> 00:02:30,480
 Lleva el pin discreto, pero nunca uniforme.
 
-27
+36
 00:02:30,500 --> 00:02:35,120
 Si insiste, foto de la puerta, incidencia morada y WhatsApp a Brian.
 
-28
+37
 00:02:35,140 --> 00:02:40,740
 Nosotros escalamos a Eugenio y a Jurídica, y tú te quedas en el pasillo vigilando.
 
-29
+38
+00:02:41,600 --> 00:02:48,280
+Recuerda que el artículo setenta y nueve te da acceso a cualquier colegio y a cualquier mesa,
+
+39
+00:02:48,300 --> 00:02:49,600
+no solo a la tuya.
+
+40
 00:02:55,600 --> 00:02:58,670
 Si faltan papeletas, pide que las repongan.
 
-30
+41
 00:02:58,690 --> 00:03:03,640
 Se puede interrumpir la votación una hora; si no hay mesa a las diez,
 
-31
+42
 00:03:03,660 --> 00:03:05,220
 se repite en dos días.
 
-32
+43
 00:03:05,240 --> 00:03:09,050
 Propaganda a menos de diez metros: foto e incidencia.
 
-33
+44
+00:03:09,600 --> 00:03:13,330
+Y si ves una urna rota o sin precinto, no la toques: foto,
+
+45
+00:03:13,350 --> 00:03:16,270
+avisa a la mesa y escríbelo en la incidencia.
+
+46
 00:03:25,600 --> 00:03:28,490
 En accesibilidad, pregunta antes de ayudar.
 
-34
+47
 00:03:28,510 --> 00:03:32,490
 Respeta el acompañante elegido, el perro guía y el braille.
 
-35
+48
 00:03:32,510 --> 00:03:37,100
 No toques la silla sin permiso y habla claro a quien lee los labios.
 
-36
+49
 00:03:37,120 --> 00:03:39,420
 Ninguna discapacidad impide votar.
 
-37
+50
+00:03:40,000 --> 00:03:42,910
+Pregunta siempre lo mismo: ¿quiere que le ayude?
+
+51
+00:03:42,930 --> 00:03:46,840
+Y si te dice que no, acompaña sin tocar y sin decidir por nadie.
+
+52
 00:03:55,600 --> 00:03:58,590
 A las ocho, cierre y escrutinio sin pausa: primero Congreso y después Senado.
 
-38
+53
 00:03:58,610 --> 00:04:01,130
 Se abre cada sobre y se lee la papeleta en voz alta, enseñándola.
 
-39
+54
 00:04:01,150 --> 00:04:02,770
 Los blancos y los nulos se cuentan aparte;
 
-40
+55
 00:04:02,790 --> 00:04:04,420
 la cruz discreta es válida y el tachón no.
 
-41
+56
 00:04:04,440 --> 00:04:06,920
 Nadie puede salir durante el escrutinio y no se puede suspender.
 
-42
+57
 00:04:06,940 --> 00:04:08,520
 Si el acta no cuadra, no firmes conforme:
 
-43
+58
 00:04:08,540 --> 00:04:10,280
 escribe tu protesta al pie y pide que conste.
 
-44
+59
 00:04:10,300 --> 00:04:12,550
 El original queda colgado en la puerta con los seis datos.
 
-45
+60
 00:04:12,570 --> 00:04:13,880
 Haz foto nítida antes de doblarla,
 
-46
+61
 00:04:13,900 --> 00:04:16,120
 pide tu copia y mándala por Scrutinia antes de las nueve.
+
+62
+00:04:18,600 --> 00:04:21,240
+Pide tu copia del acta, una por candidatura,
+
+63
+00:04:21,260 --> 00:04:25,780
+y no te vayas hasta que cuelguen el cartel con los seis datos en la puerta.
+
+64
+00:04:25,800 --> 00:04:29,670
+Y si algo no cuadra, escribe tu protesta al pie antes de firmar.
+
+65
+00:04:48,500 --> 00:04:53,370
+Tres sobres firmados con solapa cruzada: uno y dos al Tribunal,
+
+66
+00:04:53,390 --> 00:04:58,500
+con la policía y con recibo; y tres a Correos, también con recibo.
+
+67
+00:04:58,520 --> 00:05:04,400
+En la mochila: acreditación, DNI, boli negro, móvil con batería y powerbank,
+
+68
+00:05:04,420 --> 00:05:06,340
+agua y esta guía impresa.
+
+69
+00:05:06,360 --> 00:05:07,060
+Nada más.
+
+70
+00:05:10,400 --> 00:05:16,820
+Los diez pasos: verifica, acredítate, pide acta, reporta, patrulla, documenta,
+
+71
+00:05:16,840 --> 00:05:21,530
+avisa avances, foto del acta, pide copia y cierra el día.
+
+72
+00:05:21,550 --> 00:05:24,010
+Somos pocos, pero organizados.
+
+73
+00:05:24,030 --> 00:05:27,070
+¡El veintinueve lo defendemos juntos!
+
+74
+00:05:27,090 --> 00:05:27,500
+SALF.
